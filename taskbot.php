@@ -126,6 +126,14 @@ final class TaskBot_Loader {
 	protected $cpt = '';
 
 	/**
+	 * Batch object to process.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
+	public $batch = '';
+
+	/**
 	 * Creates or returns an instance of this class.
 	 *
 	 * @since  1.0.0
@@ -165,6 +173,7 @@ final class TaskBot_Loader {
 	public function plugin_classes() {
 		$this->settings = new TaskBot_Settings( $this );
 		$this->cpt = new TaskBot_CPT( $this );
+		$this->batch = new TaskBot_Batch();
 
 		new TaskBot_Task_Process();
 	}
@@ -238,6 +247,9 @@ final class TaskBot_Loader {
 		} elseif ( file_exists( __DIR__ . '/vendors/CMB2/init.php' ) ) {
 			require_once  __DIR__ . '/vendors/CMB2/init.php';
 		}
+
+		require_once __DIR__ . '/vendors/wp-bg-processing/classes/wp-async-request.php';
+		require_once __DIR__ . '/vendors/wp-bg-processing/classes/wp-background-process.php';
 
 	}
 

@@ -40,9 +40,20 @@ function add_my_task( $task ) {
 
 	$user_query = new WP_User_Query( array( 'role' => 'Subscriber' ) );
 
-	tb_error_log( $user_query->results );
+	foreach ( $user_query->results as $item ) {
+		taskbot()->batch->push_to_queue( $item->ID );
+	}
+
+	taskbot()->batch->save()->dispatch();
+
+	//tb_error_log( $user_query->results );
 }
 add_action( 'taskbot_add_test_task', 'add_my_task' );
+
+function my_batch_task( $tb_id, $item ) {
+	tb_error_log($item);
+}
+add_action( 'taskbot_run_test_task', 'my_batch_task', 10, 2 );
 
 function tb_error_log( $data ) {
 	error_log( print_r( $data, true ) );
