@@ -242,11 +242,15 @@ if ( ! class_exists( 'TaskBot_CPT' ) ) :
 			) );
 		}
 
+		/**
+		 * Add cmb2 fields from task data
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
 		public function task_fields() {
 
 			$tb = taskbot_get_all_tasks();
-
-			// tb_error_log( $tb );
 			$prefix = '_taskbot_';
 
 			foreach ( $tb as $task ) {
@@ -256,7 +260,7 @@ if ( ! class_exists( 'TaskBot_CPT' ) ) :
 				 */
 				$cmb = new_cmb2_box( array(
 					'id'            => $task->task['id'],
-					'title'         => __( $task->task['title'] . ' Options', 'taskbot' ),
+					'title'         => $task->task['title'] . ' Options',
 					'object_types'  => array( 'taskbot' ),
 					'context'       => 'normal',
 					'priority'      => 'high',
@@ -264,16 +268,12 @@ if ( ! class_exists( 'TaskBot_CPT' ) ) :
 					'attributes' => array( 'classes' => 'task-option' ),
 				) );
 
-				$cmb->add_field( array(
-					'name'             => 'Task',
-					'desc'             => 'Select an option',
-					'id'               => $prefix . 'task',
-					'type'             => 'select',
-					'show_option_none' => true,
-					'default'          => 'custom',
-					'options'          => $this->tasks,
-				) );
-
+				// Add each field.
+				if ( isset( $task->task['fields'] ) && ! empty( $task->task['fields'] ) ) {
+					foreach ( $task->task['fields'] as $field ) {
+						$cmb->add_field( $field );
+					}
+				}
 			}
 
 		}
@@ -306,10 +306,11 @@ if ( ! class_exists( 'TaskBot_CPT' ) ) :
 		 * @return void
 		 */
 		public function get_tasks() {
+
 			$tasks = taskbot_get_all_tasks();
 
 			foreach ( $tasks as $key => $value ) {
-				if ( ! empty( $value->task['title'] ) ) {
+				if ( isset( $value->task['title'] ) && ! empty( $value->task['title'] ) ) {
 					$this->tasks[ $value->task['id'] ] = $value->task['title'];
 				}
 			}
@@ -321,6 +322,7 @@ endif; // End class_exists check.
  * Remove row actions
  *
  * @since 1.0.0
+ * @param array $actions
  * @return array
  */
 function taskbot_remove_row_actions( $actions ) {
@@ -338,6 +340,7 @@ add_filter( 'post_row_actions', 'taskbot_remove_row_actions', 10, 1 );
  * Remove cpt list columns
  *
  * @since 1.0.0
+ * @param array $columns
  * @return array
  */
 function taskbot_hide_cpt_columns( $columns ) {

@@ -29,7 +29,8 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			add_action( 'save_post_taskbot', array( $this, 'post_save' ) );
 			add_action( 'delete_post', array( $this, 'post_delete' ) );
 			add_action( 'trashed_post', array( $this, 'post_delete' ) );
-			//add_action( 'init', array( $this, 'set_actions' ) );
+			add_action( 'init', array( $this, 'set_actions' ) );
+			//add_action( 'init', array( $this, 'run_my_task' ) );
 		}
 
 		/**
@@ -68,20 +69,19 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 				$tb_date['timestamp'] = $timestamp;
 			}
 
+			$fields_data = $this->process_fields( $tb_id, $_POST );
+			$axtra_data = isset( $tb->task['data'] ) ? $tb->task['data'] : '';
+
 			$tasks = $this->update( $post_id, array(
 				'id' => $tb_id,
 				'recurring' => $tb_recurring,
 				'schedule' => $tb_date,
+				'fields' => $fields_data,
+				'data' => $axtra_data,
 			) );
 
-			$args = array(
-				array(
-					'post_id' => $post_id,
-					'task' => $tb_id,
-				),
-			);
-
-			$schedule = 'taskbot_run_' . $tb_id;
+			$args = array( $post_id );
+			$schedule = 'taskbot_do_' . $tb_id;
 
 			if ( $timestamp > $nowtimestamp ) {
 
@@ -158,16 +158,69 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			return $task_option;
 		}
 
+		/**
+		 * Setup action hook for each task
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
 		public function set_actions() {
 
 			$task_option = get_site_option( 'taskbot_tasks' );
 
 			foreach ( $task_option as $key => $task  ) {
+				add_action( 'taskbot_do_' . $task['id'], array( $this, 'add_this_task' ) );
+			}
+		}
 
-				if ( isset( $task['callback'] ) ) {
-					add_action( 'taskbot_run_' . $key . '_test_task', $task['callback'] );
+		/**
+		 * [run_this_task description]
+		 *
+		 * @since 1.0.0
+		 * @param  integer $task_id
+		 * @return void
+		 */
+		function add_this_task( $task_id ) {
+			$task = taskbot_get_task_by_id( $task_id );
+			do_action( 'taskbot_add_' . $task['id'], $task );
+		}
+
+		/**
+		 * Returns array of CMB2 fields data for the task
+		 *
+		 * @since 1.0.0
+		 * @param  string $tb_id
+		 * @param  array  $data
+		 * @return array
+		 */
+		public function process_fields( $tb_id, $data = array() ) {
+
+			if ( ! $tb_id || empty( $data ) ) {
+				return;
+			}
+
+			$fields_data = array();
+
+			$task = taskbot_get_task_by_id( $tb_id );
+
+			if ( $task && ! empty( $task ) ) {
+				foreach ( $task->task['fields'] as $key => $value ) {
+
+					if ( isset( $data[ $value['id'] ] ) ) {
+						$fields_data[  $value['id'] ] = $data[ $value['id'] ];
+					}
 				}
 			}
+
+			/**
+			 * Filters the fields data saved to task. Useful to add extra info you need to process during batch run.
+			 *
+			 * @since 1.0.0
+			 * @var array $fields_data
+			 * @var string $tb_id
+			 */
+			return apply_filters( 'taskbot_task_data_filter', $fields_data, $tb_id );
+
 		}
 	}
 

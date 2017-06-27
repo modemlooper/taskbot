@@ -57,11 +57,17 @@ function taskbot_get_all_tasks() {
 	return TaskBot_Base::get_all();
 }
 
-function taskbot_get_tasks_by_id( $id ) {
+function taskbot_get_task_by_id( $id ) {
 
-	$tb = TaskBot_Base::get( $id );
+	//$tb = TaskBot_Base::get( $id );
 
-	return $tb;
+	$tasks = get_site_option( 'taskbot_tasks' );
+
+	if ( isset( $tasks[ $id ] ) ) {
+		return $tasks[ $id ];
+	}
+
+	return;
 }
 
 function taskbot_get_task_data( $post_id ) {
@@ -69,10 +75,14 @@ function taskbot_get_task_data( $post_id ) {
 	$meta = get_post_meta( $post_id );
 	$data = array();
 
-	foreach ( $meta as $key => $value ) {
-		if ( stristr( $key, '_taskbot_' ) !== false ) {
-			$data[ $key ] = $value[0];
+	if ( $meta ) {
+
+		foreach ( $meta as $key => $value ) {
+			if ( stristr( $key, '_taskbot_' ) !== false ) {
+				$data[ $key ] = $value[0];
+			}
 		}
+
 	}
 
 	// $tb = TaskBot_Base::get( $id );
