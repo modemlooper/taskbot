@@ -42,7 +42,7 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 		 */
 		public function post_save( $post_id ) {
 
-			if ( ! isset( $_POST['_taskbot_task'] ) && ! empty( $_POST['_taskbot_task'] ) ) {
+			if ( ! isset( $_POST['_taskbot_task'] ) || empty( $_POST['_taskbot_task'] ) ) {
 				return;
 			}
 
@@ -70,15 +70,17 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			}
 
 			$fields_data = $this->process_fields( $tb_id, $_POST );
-			$axtra_data = isset( $tb->task['data'] ) ? $tb->task['data'] : '';
+			$extra_data = isset( $tb->task['data'] ) ? $tb->task['data'] : '';
 
 			$tasks = $this->update( $post_id, array(
 				'id' => $tb_id,
 				'recurring' => $tb_recurring,
 				'schedule' => $tb_date,
 				'fields' => $fields_data,
-				'data' => $axtra_data,
+				'data' => $extra_data,
 			) );
+
+			//tb_error_log( $tasks );
 
 			$args = array( $post_id );
 			$schedule = 'taskbot_do_' . $tb_id;
@@ -168,20 +170,33 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 
 			$task_option = get_site_option( 'taskbot_tasks' );
 
-			foreach ( $task_option as $key => $task  ) {
-				add_action( 'taskbot_do_' . $task['id'], array( $this, 'add_this_task' ) );
+			if ( ! empty( $task_option ) ) {
+				foreach ( $task_option as $key => $task  ) {
+					add_action( 'taskbot_do_' . $task['id'], array( $this, 'add_this_task' ) );
+				}
 			}
+
+
 		}
 
 		/**
-		 * [run_this_task description]
+		 * Hook for cron job to tasks action.
 		 *
 		 * @since 1.0.0
-		 * @param  integer $task_id
+		 * @param  string $tb_id
 		 * @return void
 		 */
-		function add_this_task( $task_id ) {
-			$task = taskbot_get_task_by_id( $task_id );
+		public function add_this_task( $tb_id ) {
+
+			$task = taskbot_get_task_by_id( $tb_id );
+
+			/**
+			 * This hook should run a function that sends items to be batch processed.
+			 * The dynamic portion of the hook name, $task['id'], is this task id.
+			 *
+			 * @since 1.0.0
+			 * @var array $task Tasks data including post meta.
+			 */
 			do_action( 'taskbot_add_' . $task['id'], $task );
 		}
 
@@ -201,7 +216,7 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 
 			$fields_data = array();
 
-			$task = taskbot_get_task_by_id( $tb_id );
+			$task = TaskBot_Base::get( $tb_id );
 
 			if ( $task && ! empty( $task ) ) {
 				foreach ( $task->task['fields'] as $key => $value ) {
@@ -225,3 +240,13 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 	}
 
 endif; // End class_exists check.
+
+/**
+ * Helper function to access the task process object methods
+ *
+ * @since 1.0.0
+ * @return object TaskBot_Task_Process()
+ */
+function taskbot_task_process() {
+	return new TaskBot_Task_Process();
+}

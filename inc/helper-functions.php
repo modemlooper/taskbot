@@ -19,14 +19,11 @@ function taskbot_new_task( array $task_config ) {
 /**
  * Retrieve a TaskBot instance by the task ID
  *
- * @since  2.0.0
+ * @since  1.0.0
  * @param  mixed  $taskbot    Metabox ID or Metabox config array.
- * @param  int    $object_id   Object ID.
- * @param  string $object_type Type of object being saved. (e.g., post, user, comment, or options-page).
- *                             Defaults to metabox object type.
  * @return TaskBot object
  */
-function taskbot_get_task( $taskbot, $object_id = 0, $object_type = '' ) {
+function taskbot_get_task( $taskbot ) {
 
 	if ( $taskbot instanceof TaskBot_Tasks ) {
 		return $taskbot;
@@ -35,15 +32,7 @@ function taskbot_get_task( $taskbot, $object_id = 0, $object_type = '' ) {
 	// See if we already have an instance of this metabox.
 	$tb = TaskBot_Base::get( $taskbot['id'] );
 	// If not, we'll initate a new metabox.
-	$tb = $tb ? $tb : new TaskBot_Tasks( $taskbot, $object_id );
-
-	if ( $tb && $object_id ) {
-		$tb->object_id( $object_id );
-	}
-
-	if ( $tb && $object_type ) {
-		$tb->object_type( $object_type );
-	}
+	$tb = $tb ? $tb : new TaskBot_Tasks( $taskbot );
 
 	return $tb;
 }
@@ -57,34 +46,39 @@ function taskbot_get_all_tasks() {
 	return TaskBot_Base::get_all();
 }
 
-function taskbot_get_task_by_id( $id ) {
-
-	//$tb = TaskBot_Base::get( $id );
+/**
+ *
+ * Get saved task data from cpt id
+ *
+ * @since 1.0.0
+ * @param  integer $post_id
+ * @return string
+ */
+function taskbot_get_task_by_id( $post_id ) {
 
 	$tasks = get_site_option( 'taskbot_tasks' );
 
-	if ( isset( $tasks[ $id ] ) ) {
-		return $tasks[ $id ];
+	foreach ( $tasks as $task => $value ) {
+		if ( isset( $tasks[ $post_id ] ) ) {
+			return $value;
+		}
 	}
 
 	return;
 }
 
-function taskbot_get_task_data( $post_id ) {
+/**
+ * Returns meta data from task cpt id
+ *
+ * @since 1.0.0
+ * @param  integer $post_id
+ * @return array
+ */
+function taskbot_get_task_metadata( $post_id ) {
 
 	$meta = get_post_meta( $post_id );
-	$data = array();
 
-	if ( $meta ) {
+	$fields_data = taskbot_task_process()->process_fields( $meta['_taskbot_task'][0], $meta );
 
-		foreach ( $meta as $key => $value ) {
-			if ( stristr( $key, '_taskbot_' ) !== false ) {
-				$data[ $key ] = $value[0];
-			}
-		}
-
-	}
-
-	// $tb = TaskBot_Base::get( $id );
-	return $data;
+	return $fields_data;
 }

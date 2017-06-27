@@ -37,7 +37,7 @@ if ( ! class_exists( 'TaskBot_Tasks' ) ) :
 			'id'               => '',
 			'title'            => '',
 			'description'      => '',
-			'callback'		   => '',
+			'data'		   => '',
 			'fields'           => array(),
 		);
 
