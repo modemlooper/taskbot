@@ -10,8 +10,6 @@ class TaskBot_Batch extends WP_Background_Process {
 
 	public function __construct() {
 		parent::__construct();
-
-		//add_action( 'wp_process_current_' . $this->current_task, array( $this, $this->current_task ) );
 	}
 
 	/**
@@ -26,12 +24,12 @@ class TaskBot_Batch extends WP_Background_Process {
 	 *
 	 * @return mixed
 	 */
-	protected function task( $item ) {
+	protected function task( $task, $item ) {
 		// Actions to perform
 
-		sleep(5);
+		//sleep(1);
 
-		do_action( 'taskbot_run_test_task', 'test_task', $item );
+		do_action( 'taskbot_run_' . $task['id'] , $task, $item );
 
 		return false;
 	}
@@ -45,7 +43,12 @@ class TaskBot_Batch extends WP_Background_Process {
 	protected function complete() {
 		parent::complete();
 
-		// Show notice to user or perform some other arbitrary task...
+		$to = 'modemlooper@gmail.com';
+		$subject = 'sync complete';
+		$body = 'The sync completed';
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		wp_mail( $to, $subject, $body, $headers );
 	}
 
 }

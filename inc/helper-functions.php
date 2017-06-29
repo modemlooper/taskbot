@@ -59,7 +59,7 @@ function taskbot_get_task_by_id( $post_id ) {
 	$tasks = get_site_option( 'taskbot_tasks' );
 
 	foreach ( $tasks as $task => $value ) {
-		if ( isset( $tasks[ $post_id ] ) ) {
+		if ( $post_id === $task ) {
 			return $value;
 		}
 	}

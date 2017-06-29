@@ -33,27 +33,38 @@ function test_tasks() {
 }
 add_action( 'taskbot_init', 'test_tasks' );
 
+
 function add_my_task( $task ) {
 
-	//tb_error_log( taskbot_get_task_metadata( 27 ) );
-	//tb_error_log( $task );
+	//$user_query = new WP_User_Query( array( 'role' => 'Subscriber' ) );
 
-	$user_query = new WP_User_Query( array( 'role' => 'Subscriber' ) );
-
-	foreach ( $user_query->results as $item ) {
-		taskbot()->batch->push_to_queue( $item->ID );
+	$array = array();
+	for ( $x = 1; $x <= 10; $x++ ) {
+	    $array[] = $x;
 	}
 
-	taskbot()->batch->save()->dispatch();
-
-	//tb_error_log( $user_query->results );
+	taskbot_add_items( array(
+		'task' => $task,
+		'items' => $array,
+	) );
 }
 add_action( 'taskbot_add_test_task', 'add_my_task' );
+add_action( 'taskbot_add_test_task_r', 'add_my_task' );
 
-function my_batch_task( $tb_id, $item ) {
+
+function my_batch_task( $task, $item ) {
 	tb_error_log($item);
 }
 add_action( 'taskbot_run_test_task', 'my_batch_task', 10, 2 );
+
+
+function my_batch_task_r( $task, $item ) {
+	tb_error_log($item);
+}
+add_action( 'taskbot_run_test_task_r', 'my_batch_task_r', 10, 2 );
+
+
+
 
 function tb_error_log( $data ) {
 	error_log( print_r( $data, true ) );
