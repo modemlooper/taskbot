@@ -186,6 +186,7 @@ final class TaskBot_Loader {
 	 */
 	public function hooks() {
 		add_action( 'init', array( $this, 'init' ) );
+		add_action( 'admin_print_scripts', array( $this, 'scripts' ) );
 	}
 
 	/**
@@ -281,6 +282,18 @@ final class TaskBot_Loader {
 	 * @since 1.0.0
 	 */
 	public function scripts() {
+
+		global $typenow;
+
+		if ( 'taskbot' === $typenow ) {
+			// Register out javascript file.
+			wp_register_script( 'taskbot', taskbot()->url() . 'assets/js/taskbot.js' );
+
+			wp_localize_script( 'taskbot', 'taskbot', taskbot()->cpt->tasks );
+
+			// Enqueued script with localized data.
+			wp_enqueue_script( 'taskbot' );
+		}
 
 	}
 

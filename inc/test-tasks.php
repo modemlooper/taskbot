@@ -52,13 +52,19 @@ add_action( 'taskbot_add_test_task', 'add_my_task' );
 add_action( 'taskbot_add_test_task_r', 'add_my_task' );
 
 
-function my_batch_task( $task, $item ) {
-	tb_error_log($item);
+function my_batch_task( $item, $task ) {
+
+	$items = array(
+		'item' => $item,
+		'task' => $task,
+	);
+
+	tb_error_log($items);
 }
 add_action( 'taskbot_run_test_task', 'my_batch_task', 10, 2 );
 
 
-function my_batch_task_r( $task, $item ) {
+function my_batch_task_r( $item, $task ) {
 	tb_error_log($item);
 }
 add_action( 'taskbot_run_test_task_r', 'my_batch_task_r', 10, 2 );
