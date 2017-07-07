@@ -39,7 +39,7 @@ function add_my_task( $task ) {
 	//$user_query = new WP_User_Query( array( 'role' => 'Subscriber' ) );
 
 	$array = array();
-	for ( $x = 1; $x <= 10; $x++ ) {
+	for ( $x = 1; $x <= 2000; $x++ ) {
 	    $array[] = $x;
 	}
 
@@ -56,15 +56,20 @@ function my_batch_task( $item, $task ) {
 
 	$items = array(
 		'item' => $item,
-		'task' => $task,
+		'task' => $task['id'],
 	);
 
-	tb_error_log($items);
+	tb_error_log($item);
 }
 add_action( 'taskbot_run_test_task', 'my_batch_task', 10, 2 );
 
 
 function my_batch_task_r( $item, $task ) {
+
+	$items = array(
+		'item' => $item,
+		'task' => $task['id'],
+	);
 	tb_error_log($item);
 }
 add_action( 'taskbot_run_test_task_r', 'my_batch_task_r', 10, 2 );

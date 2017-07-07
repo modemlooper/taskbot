@@ -390,6 +390,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * @return int
 		 */
 		protected function get_memory_limit() {
+
 			if ( function_exists( 'ini_get' ) ) {
 				$memory_limit = ini_get( 'memory_limit' );
 			} else {
@@ -443,7 +444,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * @return mixed
 		 */
 		public function schedule_cron_healthcheck( $schedules ) {
-			$interval = apply_filters( $this->identifier . '_cron_interval', 5 );
+			$interval = apply_filters( $this->identifier . '_cron_interval', 3 );
 
 			if ( property_exists( $this, 'cron_interval' ) ) {
 				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );

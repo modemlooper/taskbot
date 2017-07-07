@@ -52,7 +52,7 @@ window.TaskBot = {};
 
         // Function to handle which items should be showing/hiding
         that.metaShowHide = function(showem) {
-            showem.slideDown('fast');
+            showem.slideDown('slow');
         }
 
 		// Engage!

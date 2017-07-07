@@ -35,7 +35,9 @@ class TaskBot_Batch extends WP_Background_Process {
 	 */
 	protected function task( $task, $item ) {
 
-		sleep(2);
+		//sleep(1);
+
+		time_nanosleep(0, 100000000);
 
 		do_action( 'taskbot_run_' . $task['id'], $item, $task );
 
@@ -53,7 +55,7 @@ class TaskBot_Batch extends WP_Background_Process {
 
 		$to = 'modemlooper@gmail.com';
 		$subject = 'taskbot complete';
-		$body = 'The task completed';
+		$body = 'The task completed ' . current_time( 'h:i:s' );
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 		wp_mail( $to, $subject, $body, $headers );

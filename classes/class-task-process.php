@@ -51,6 +51,10 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			$tb_recurring = isset( $_POST['_taskbot_recurrence'] ) ? $_POST['_taskbot_recurrence'] : 'daily';
 			$tb_date = isset( $_POST['_taskbot_datetime_timestamp'] ) ? $_POST['_taskbot_datetime_timestamp'] : '';
 
+			if ( isset( $tb_date['date'] ) && empty( $tb_date['date'] ) ) {
+				return;
+			}
+
 			$tb_date = array_map( 'esc_attr', $tb_date );
 
 			// Get current timestamp.
@@ -80,8 +84,6 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 				'data' => $extra_data,
 			) );
 
-			//tb_error_log( $tasks );
-
 			$args = array( $post_id );
 			$schedule = 'taskbot_do_' . $tb_id;
 
@@ -97,14 +99,8 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 					} else {
 						wp_schedule_event( $timestamp, $tb_recurring, $schedule, $args );
 					}
-
 				}
 			}
-
-			//tb_error_log( $tb_recurring );
-			//tb_error_log( $timestamp );
-			//tb_error_log( $now );
-			//tb_error_log( $nowtimestamp );
 		}
 
 		/**
@@ -243,7 +239,12 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 
 endif; // End class_exists check.
 
-
+/**
+ * Helper function to dd tasks to que.
+ *
+ * @since 1.0.0
+ * @param array $task
+ */
 function taskbot_add_items( $task = array() ) {
 
 	$defaults = array(
@@ -255,10 +256,14 @@ function taskbot_add_items( $task = array() ) {
 
 	if ( ! empty( $data['task'] ) && ! empty( $data['items'] ) ) {
 
-		taskbot()->batch->add( array(
-			'task' => $data['task'],
-			'items' => $data['items'],
-		) );
+		$chunks = array_chunk( $data['items'], 500 );
+
+		foreach ( $chunks as $items ) {
+			taskbot()->batch->add( array(
+				'task' => $data['task'],
+				'items' => $items,
+			) );
+		}
 
 	}
 
