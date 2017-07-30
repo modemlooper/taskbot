@@ -82,3 +82,7 @@ function taskbot_get_task_metadata( $post_id ) {
 
 	return $fields_data;
 }
+
+function tb_error_log( $data ) {
+	error_log( print_r( $data, true ) );
+}

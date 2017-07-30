@@ -23,6 +23,13 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		public $task = array();
 
 		/**
+		 * Task_data
+		 *
+		 * @var string|array
+		 */
+		public $task_data = '';
+
+		/**
 		 * Action
 		 *
 		 * (default value: 'background_process')
@@ -80,6 +87,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		public function add( $task = array() ) {
 
 			$this->task = $task['task'];
+			$this->task_data = $task['data'];
 
 			foreach ( $task['items'] as $item ) {
 				$this->push_to_queue( $item );
@@ -128,6 +136,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$task_data = array(
 					'task' => $this->task,
 					'items' => $this->data,
+					'data' => $this->task_data,
 				);
 
 				update_site_option( $key, $task_data );
@@ -330,7 +339,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$batch = $this->get_batch();
 
 				foreach ( $batch->data['items'] as $key => $value ) {
-					$task = $this->task( $batch->data['task'], $value );
+					$task = $this->task( $batch->data['task'], $value, $batch->data['data'] );
 
 					if ( false !== $task ) {
 						$batch->data['items'][ $key ] = $task;
@@ -348,7 +357,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				if ( ! empty( $batch->data['items'] ) ) {
 					$this->update( $batch->key, $batch->data );
 				} else {
+
+					do_action( 'taskbot_batch_complete_' . $batch->data['task']['id'], $batch );
+
 					$this->delete( $batch->key );
+
 				}
 			} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() );
 
@@ -358,7 +371,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			if ( ! $this->is_queue_empty() ) {
 				$this->dispatch();
 			} else {
-				$this->complete();
+				$this->complete( $batch->data['task'] );
 			}
 
 			wp_die();
@@ -431,9 +444,12 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Override if applicable, but ensure that the below actions are
 		 * performed, or, call parent::complete().
 		 */
-		protected function complete() {
+		protected function complete( $batch ) {
 			// Unschedule the cron healthcheck.
-			$this->clear_scheduled_event();
+
+			if ( $this->is_queue_empty() ) {
+				$this->clear_scheduled_event();
+			}
 		}
 
 		/**
@@ -508,7 +524,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Stop processing queue items, clear cronjob and delete batch.
 		 */
 		public function cancel_process() {
-			if ( ! $this->is_queue_empty() ) {
+			if ( $this->is_queue_empty() ) {
 				$batch = $this->get_batch();
 
 				$this->delete( $batch->key );
@@ -530,7 +546,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 *
 		 * @return mixed
 		 */
-		abstract protected function task( $task, $item );
+		abstract protected function task( $task, $item, $data );
 
 	}
 }

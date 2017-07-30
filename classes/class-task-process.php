@@ -186,8 +186,6 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 
 			$task = taskbot_get_task_by_id( $tb_id );
 
-			//tb_error_log($task);
-
 			/**
 			 * This hook should run a function that sends items to be batch processed.
 			 * The dynamic portion of the hook name, $task['id'], is this task id.
@@ -196,6 +194,7 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			 * @var array $task Tasks data including post meta.
 			 */
 			do_action( 'taskbot_add_' . $task['id'], $task );
+
 		}
 
 		/**
@@ -250,6 +249,7 @@ function taskbot_add_items( $task = array() ) {
 	$defaults = array(
 		'task' => '',
 		'items' => array(),
+		'data' => '',
 	);
 
 	$data = wp_parse_args( $task, $defaults );
@@ -262,6 +262,7 @@ function taskbot_add_items( $task = array() ) {
 			taskbot()->batch->add( array(
 				'task' => $data['task'],
 				'items' => $items,
+				'data' => $data['data'],
 			) );
 		}
 

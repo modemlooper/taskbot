@@ -33,32 +33,31 @@ class TaskBot_Batch extends WP_Background_Process {
 	 * @param mixed $item Queue item to iterate over.
 	 * @return mixed
 	 */
-	protected function task( $task, $item ) {
+	protected function task( $task, $item, $data ) {
 
-		//sleep(1);
+		$data = array(
+			'task' => $task,
+			'item' => $item,
+			'data' => $data,
+		);
 
-		time_nanosleep(0, 100000000);
-
-		do_action( 'taskbot_run_' . $task['id'], $item, $task );
+		do_action( 'taskbot_run_' . $task['id'], $data );
 
 		return false;
 	}
 
 	/**
-	 * Complete
+	 * Batch Complete
 	 *
 	 * Override if applicable, but ensure that the below actions are
 	 * performed, or, call parent::complete().
+	 * @param array $batch
+	 * @return void
 	 */
-	protected function complete() {
-		parent::complete();
+	protected function complete( $batch ) {
 
-		$to = 'modemlooper@gmail.com';
-		$subject = 'taskbot complete';
-		$body = 'The task completed ' . current_time( 'h:i:s' );
-		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+		do_action( 'taskbot_complete_' . $batch['id'], $batch );
 
-		wp_mail( $to, $subject, $body, $headers );
 	}
 
 }

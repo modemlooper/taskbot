@@ -160,8 +160,11 @@ final class TaskBot_Loader {
 		$this->includes();
 		$this->load_libs();
 		$this->plugin_classes();
+		$this->scripts();
 
 		do_action( 'taskbot_init' );
+
+
 	}
 
 	/**
@@ -176,6 +179,8 @@ final class TaskBot_Loader {
 		$this->batch = new TaskBot_Batch();
 
 		new TaskBot_Task_Process();
+
+
 	}
 
 	/**
@@ -218,7 +223,6 @@ final class TaskBot_Loader {
 	public function init() {
 		if ( $this->check_requirements() ) {
 			load_plugin_textdomain( 'taskbot', false, dirname( $this->basename ) . '/languages/' );
-			$this->scripts();
 		}
 	}
 
@@ -231,7 +235,8 @@ final class TaskBot_Loader {
 	private function includes() {
 
 		require_once  __DIR__ . '/inc/helper-functions.php';
-		require_once  __DIR__ . '/inc/test-tasks.php';
+
+		do_action( 'taskbot_include' );
 
 	}
 
