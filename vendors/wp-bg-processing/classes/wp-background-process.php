@@ -88,6 +88,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$this->task = $task['task'];
 			$this->task_data = $task['data'];
+			$this->data = array();
 
 			foreach ( $task['items'] as $item ) {
 				$this->push_to_queue( $item );
@@ -186,7 +187,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 */
 		protected function generate_key( $length = 64 ) {
 			$unique  = md5( microtime() . rand() );
-			$prepend = $this->identifier . '_batch_';
+			$prepend = $this->identifier . '_';
 
 			return substr( $prepend . $unique, 0, $length );
 		}
@@ -234,7 +235,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$column = 'meta_key';
 			}
 
-			$key = $this->identifier . '_batch_%';
+			$key = $this->identifier . '_%';
 
 			$count = $wpdb->get_var( $wpdb->prepare( "
 			SELECT COUNT(*)
@@ -309,7 +310,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$value_column = 'meta_value';
 			}
 
-			$key = $this->identifier . '_batch_%';
+			$key = $this->identifier . '_%';
 
 			$query = $wpdb->get_row( $wpdb->prepare( "
 			SELECT *
@@ -323,6 +324,8 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$batch->key  = $query->$column;
 			$batch->data = maybe_unserialize( $query->$value_column );
 
+			// tb_error_log( $batch->key );
+			// tb_error_log( $batch->data['items'] );
 			return $batch;
 		}
 
@@ -336,15 +339,17 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$this->lock_process();
 
 			do {
+
 				$batch = $this->get_batch();
 
 				foreach ( $batch->data['items'] as $key => $value ) {
+
 					$task = $this->task( $batch->data['task'], $value, $batch->data['data'] );
 
-					if ( false !== $task ) {
-						$batch->data['items'][ $key ] = $task;
-					} else {
+					if ( false === $task ) {
 						unset( $batch->data['items'][ $key ] );
+					} else {
+
 					}
 
 					if ( $this->time_exceeded() || $this->memory_exceeded() ) {
@@ -355,13 +360,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 				// Update or delete current batch.
 				if ( ! empty( $batch->data['items'] ) ) {
-					$this->update( $batch->key, $batch->data );
+					//tb_error_log( $batch->key );
+					//tb_error_log( $batch->data['items'] );
+					$this->update( $batch->key, array() );
 				} else {
-
-					do_action( 'taskbot_batch_complete_' . $batch->data['task']['id'], $batch );
-
 					$this->delete( $batch->key );
-
 				}
 			} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() );
 
@@ -391,6 +394,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$return         = false;
 
 			if ( $current_memory >= $memory_limit ) {
+				// tb_error_log( 'memory exceeded' );
 				$return = true;
 			}
 
@@ -432,6 +436,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$return = false;
 
 			if ( time() >= $finish ) {
+				// tb_error_log( 'time exceeded' );
 				$return = true;
 			}
 
@@ -446,7 +451,6 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 */
 		protected function complete( $batch ) {
 			// Unschedule the cron healthcheck.
-
 			if ( $this->is_queue_empty() ) {
 				$this->clear_scheduled_event();
 			}

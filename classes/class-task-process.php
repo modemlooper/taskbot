@@ -256,12 +256,13 @@ function taskbot_add_items( $task = array() ) {
 
 	if ( ! empty( $data['task'] ) && ! empty( $data['items'] ) ) {
 
-		$chunks = array_chunk( $data['items'], 500 );
+		$chunks = array_chunk( $data['items'], 20 );
 
-		foreach ( $chunks as $items ) {
+		foreach ( $chunks as $key => $value ) {
+
 			taskbot()->batch->add( array(
 				'task' => $data['task'],
-				'items' => $items,
+				'items' => $chunks[ $key ],
 				'data' => $data['data'],
 			) );
 		}
