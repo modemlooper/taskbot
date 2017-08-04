@@ -143,6 +143,8 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				update_site_option( $key, $task_data );
 			}
 
+			$this->data = array();
+
 			return $this;
 		}
 
@@ -349,7 +351,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 					if ( false === $task ) {
 						unset( $batch->data['items'][ $key ] );
 					} else {
-
+						$batch->data['items'][ $key ] = $task;
 					}
 
 					if ( $this->time_exceeded() || $this->memory_exceeded() ) {
@@ -360,11 +362,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 				// Update or delete current batch.
 				if ( ! empty( $batch->data['items'] ) ) {
-					//tb_error_log( $batch->key );
-					//tb_error_log( $batch->data['items'] );
-					$this->update( $batch->key, array() );
+					$this->update( $batch->key, $batch->data );
 				} else {
 					$this->delete( $batch->key );
+
+					do_action( 'taskbot_batch_complete_' . $batch->data['task']['id'], $batch );
 				}
 			} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() );
 
@@ -464,7 +466,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * @return mixed
 		 */
 		public function schedule_cron_healthcheck( $schedules ) {
-			$interval = apply_filters( $this->identifier . '_cron_interval', 3 );
+			$interval = apply_filters( $this->identifier . '_cron_interval', 1 );
 
 			if ( property_exists( $this, 'cron_interval' ) ) {
 				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );

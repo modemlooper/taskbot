@@ -34,6 +34,7 @@ if ( ! class_exists( 'TaskBot_Base' ) ) :
 		 * @param TaskBot_Tasks $tb_instance TaskBot_Tasks instance.
 		 */
 		public static function add( TaskBot_Tasks $tb_instance ) {
+			//taskbot()->tasks[ $tb_instance->tb_id ] = $tb_instance;
 			self::$tb_instances[ $tb_instance->tb_id ] = $tb_instance;
 		}
 

@@ -30,7 +30,7 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 			add_action( 'delete_post', array( $this, 'post_delete' ) );
 			add_action( 'trashed_post', array( $this, 'post_delete' ) );
 			add_action( 'init', array( $this, 'set_actions' ) );
-			//add_action( 'init', array( $this, 'run_my_task' ) );
+
 		}
 
 		/**
@@ -172,7 +172,6 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 				}
 			}
 
-
 		}
 
 		/**
@@ -239,7 +238,7 @@ if ( ! class_exists( 'TaskBot_Task_Process' ) ) :
 endif; // End class_exists check.
 
 /**
- * Helper function to dd tasks to que.
+ * Helper function to add tasks to que.
  *
  * @since 1.0.0
  * @param array $task
@@ -256,7 +255,17 @@ function taskbot_add_items( $task = array() ) {
 
 	if ( ! empty( $data['task'] ) && ! empty( $data['items'] ) ) {
 
-		$chunks = array_chunk( $data['items'], 20 );
+		$array_size = taskbot_get_option( 'taskbot_batch_size' ) ? taskbot_get_option( 'taskbot_batch_size' ) : 500;
+
+		/**
+		 * Filter for array chunk size. If you have problems with arrays being to big for server resources. Lower this ammount.
+		 *
+		 * @var integer $array_size
+		 */
+		$chunk_amount = apply_filters( 'taskbot_batch_chunk' , $array_size );
+
+		// Break up large arrays so there isnt memory timeout.
+		$chunks = array_chunk( $data['items'], $chunk_amount );
 
 		foreach ( $chunks as $key => $value ) {
 
@@ -266,7 +275,5 @@ function taskbot_add_items( $task = array() ) {
 				'data' => $data['data'],
 			) );
 		}
-
 	}
-
 }

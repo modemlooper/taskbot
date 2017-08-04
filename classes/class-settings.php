@@ -24,219 +24,189 @@ if ( ! class_exists( 'TaskBot_Settings' ) ) :
 		 * @var string
 		 */
 		private $key = 'taskbot_options';
-		/**
-		 * Array of metaboxes/fields
-		 *
-		 * @var array
-		 */
-		protected $option_metabox = array();
 
 		/**
-		 * Options Page title
+		 * Settings page metabox id
+		 *
+		 * @var string
+		 */
+		private $metabox_id = 'taskbox_option_metabox';
+
+		/**
+		 * Settings Page title
 		 *
 		 * @var string
 		 */
 		protected $title = '';
 
 		/**
-		 * Options Tab Pages
+		 * Settings Page hook
 		 *
-		 * @var array
+		 * @var string
 		 */
-		protected $options_pages = array();
-
-		/**
-		 * Parent plugin class.
-		 *
-		 * @var object
-		 * @since 1.0.0
-		 */
-		protected $plugin = null;
+		protected $options_page = '';
 
 		/**
 		 * Holds an instance of the object.
 		 *
-		 * @var object TaskBot_Admin
+		 * @var object TaskBot_CPT
 		 * @since 1.0.0
 		 */
 		private static $instance = null;
 
-		/**
-		 * Constructor.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param object $plugin this class.
-		 */
-		public function __construct( $plugin ) {
-			$this->plugin = $plugin;
-			$this->hooks();
-
-			$this->title = __( 'TaskBot', 'taskbot' );
+		/*
+		* Constructor
+		* @since 0.1.0
+		*/
+		public function __construct() {
+			// Set our title
+			$this->title = __( 'Settings', 'taskbot' );
 		}
 
 		/**
-		 * Initiate our hooks.
+		 * Get the running object
 		 *
-		 * @since 1.0.0
+		 * @return TaskBot_Settings
+		 **/
+		public static function get_instance() {
+			if ( is_null( self::$instance ) ) {
+				self::$instance = new self();
+				self::$instance->hooks();
+			}
+			return self::$instance;
+		}
+
+		/**
+		 * Initiate our hooks
+		 *
+		 * @since 0.1.0
 		 */
 		public function hooks() {
-
 			add_action( 'admin_init', array( $this, 'init' ) );
 			add_action( 'admin_menu', array( $this, 'add_options_page' ) );
+			add_action( 'cmb2_admin_init', array( $this, 'add_options_page_metabox' ) );
 
-			// Override CMB's getter.
+			// Override CMB's getter
 			add_filter( 'cmb2_override_option_get_' . $this->key, array( $this, 'get_override' ), 10, 2 );
-			// Override CMB's setter.
+			// Override CMB's setter
 			add_filter( 'cmb2_override_option_save_' . $this->key, array( $this, 'update_override' ), 10, 2 );
 		}
 
-
-			/**
-			 * Set it off!
-			 *
-			 * @since 1.0.0
-			 */
+		/**
+		 * Register our setting to WP
+		 *
+		 * @since  0.1.0
+		 */
 		public function init() {
-			$option_tabs = self::option_fields();
-			foreach ( $option_tabs as $index => $option_tab ) {
-				register_setting( $option_tab['id'], $option_tab['id'] );
-			}
+			register_setting( $this->key, $this->key );
 		}
 
 		/**
 		 * Add menu options page
 		 *
-		 * @since 1.0.0
+		 * @since 0.1.0
 		 */
 		public function add_options_page() {
 
-			$option_tabs = self::option_fields();
-			foreach ( $option_tabs as $index => $option_tab ) {
-			 	if ( 0 === $index ) {
-			 		//$this->options_pages[] = add_menu_page( $this->title, $this->title, 'manage_options', $option_tab['id'], array( $this, 'admin_page_display' ), 'dashicons-controls-repeat' ); // Link admin menu to first tab.
-			 		add_submenu_page( 'edit.php?post_type=taskbot', $this->title, $option_tab['title'], 'manage_options', $option_tab['id'], array( $this, 'admin_page_display' ) ); // Duplicate menu link for first submenu page.
-			 	} else {
-			 		$this->options_pages[] = add_submenu_page( 'edit.php?post_type=taskbot', $this->title, $option_tab['title'], 'manage_options', $option_tab['id'], array( $this, 'admin_page_display' ) );
-			 	}
-			}
-
+			$this->options_page = add_submenu_page( 'edit.php?post_type=taskbot', $this->title, $this->title, 'manage_options', $this->key, array( $this, 'admin_page_display' ) );
+			// $this->options_page = add_menu_page( $this->title, $this->title, 'manage_options', $this->key, array( $this, 'admin_page_display' ) );
+			// add_action( "admin_head-{$this->options_page}", array( $this, 'enqueue_js' ) );
+			// Include CMB CSS in the head to avoid FOUC
+			add_action( "admin_print_styles-{$this->options_page}", array( 'CMB2_hookup', 'enqueue_cmb_css' ) );
 		}
+
 		/**
-		 * Admin page markup. Tabs and metabox output.
+		 * Admin page markup. Mostly handled by CMB2
 		 *
-		 * @since  1.0.0
+		 * @since  0.1.0
 		 */
 		public function admin_page_display() {
-			$option_tabs = self::option_fields(); // get all option tabs.
-			$tab_forms = array();
 			?>
-			<div class="wrap cmb_options_page <?php echo esc_attr( $this->key ); ?>">
-			    <h2><?php echo esc_html( get_admin_page_title() ); ?></h2>
+			<div class="wrap cmb2-options-page <?php echo $this->key; ?>">
+			<style>
+			.cmb2-wrap {
+				margin-bottom: 30px !important;
+			}
 
-			<div class="content-wrap col">
+			.cmb-th + .cmb-td {
+				float: none !important;
+				margin-left: 200px;
+			}
 
-			    <!-- Options Page Nav Tabs -->
-			    <!-- <h2 class="nav-tab-wrapper">
-			    	<?php foreach ( $option_tabs as $option_tab ) :
-			    		$tab_slug = $option_tab['id'];
-			    		$nav_class = 'nav-tab';
-			    		if ( $tab_slug === $_GET['page'] ) {
-			    			$nav_class .= ' nav-tab-active'; // add active class to current tab.
-			    			$tab_forms[] = $option_tab; // add current tab to forms to be rendered.
-			    		}
-			    	?>
+			p.cmb2-metabox-description {
 
-			    	<a class="<?php echo esc_attr( $nav_class ); ?>" href="<?php menu_page_url( $tab_slug ); ?>"><?php echo esc_attr( $option_tab['title'] ); ?></a>
-			    	<?php endforeach; ?>
-			    </h2> -->
-			    <!-- End of Nav Tabs -->
+			}
 
-			    <?php foreach ( $tab_forms as $tab_form ) : // render all tab forms (normaly just 1 form). ?>
-			    <div id="<?php echo esc_attr( $tab_form['id'] ); ?>" class="group">
-			    	<?php cmb2_metabox_form( $tab_form, $tab_form['id'] ); ?>
-			    </div>
-			    <?php endforeach; ?>
-			</div>
-				<div class="clearfix"></div>
+			.cmb2-wrap .cmb-row {
+				border-bottom: 1px solid #e0e0e0;
+			}
+			</style>
+			<h2>TaskBot <?php echo esc_html( get_admin_page_title() ); ?></h2>
+			<?php cmb2_metabox_form( $this->metabox_id, $this->key ); ?>
 			</div>
 			<?php
 		}
+
 		/**
 		 * Add the options metabox to the array of metaboxes
 		 *
-		 * @since  1.0.0
+		 * @since  0.1.0
 		 */
-		function option_fields() {
+		function add_options_page_metabox() {
 
-			$prefix = 'taskbot_';
+			// hook in our save notices.
+			add_action( "cmb2_save_options-page_fields_{$this->metabox_id}", array( $this, 'settings_notices' ), 10, 2 );
 
-			// Only need to initiate the array once per page-load.
-			if ( ! empty( $this->option_metabox ) ) {
-				return $this->option_metabox;
-			}
-
-			$this->option_metabox[] = array(
-				'id'         => $prefix . 'settings', // id used as tab page slug, must be unique.
-				'title'      => 'Settings',
-				'show_on'    => array( 'key' => $prefix . 'options-page', 'value' => array( 'settings' ) ), // value must be same as id.
-				'show_names' => true,
-				'fields'     => array(
-					array(
-						'name' => __( 'Header Logo', 'theme_textdomain' ),
-						'desc' => __( 'Logo to be displayed in the header menu.', 'theme_textdomain' ),
-						'id' => 'header_logo', // each field id must be unique.
-						'default' => '',
-						'type' => 'text',
-					),
+			$cmb = new_cmb2_box( array(
+				'id'         => $this->metabox_id,
+				'hookup'     => false,
+				'cmb_styles' => false,
+				'show_on'    => array(
+				// These are important, don't remove.
+				'key'   => 'options-page',
+				'value' => array( $this->key ),
 				),
-			);
+			) );
 
-			// insert extra tabs here.
-			apply_filters( $this->key . '_metaboxes', $this->option_metabox );
+			$cmb->add_field( 	array(
+				'name' => __( 'Batch Size', 'taskbot' ),
+				'description' => __( 'Batch array size. TaskBot cuts up tasks into chunks for efficient pocessing. Server resources can fail if large arrays are held in memory. If this happens, choose a lower amount for batches.', 'taskbot' ),
+				'id' => 'taskbot_batch_size', // each field id must be unique.
+				'default' => '500',
+				'type' => 'select',
+				'options' => array(
+					'50' => '50',
+					'100' => '100',
+					'200' => '200',
+					'350' => '350',
+					'500' => '500',
+					'1000' => '1000',
+				),
+			) );
 
-			return $this->option_metabox;
-		}
-
-		/**
-		 * Returns the option key for a given field id.
-		 *
-		 * @since  1.0.0
-		 * @param string $field_id id of field.
-		 * @return array
-		 */
-		public function get_option_key( $field_id ) {
-			$option_tabs = $this->option_fields();
-			foreach ( $option_tabs as $option_tab ) { // search all tabs.
-				foreach ( $option_tab['fields'] as $field ) { // search all fields.
-					if ( $field['id'] === $field_id ) {
-						return $option_tab['id'];
-					}
-				}
-			}
-			return $this->key; // return default key if field id not found.
 		}
 
 		/**
 		 * Register settings notices for display
 		 *
-		 * @since  1.0.0
-		 * @param  int   $object_id Option key.
-		 * @param  array $updated   Array of updated fields.
+		 * @since  0.1.0
+		 * @param  int   $object_id Option key
+		 * @param  array $updated   Array of updated fields
 		 * @return void
 		 */
 		public function settings_notices( $object_id, $updated ) {
 			if ( $object_id !== $this->key || empty( $updated ) ) {
 				return;
 			}
-			add_settings_error( $this->key . '-notices', '', __( 'Settings updated.', 'myprefix' ), 'updated' );
+
+			add_settings_error( $this->key . '-notices', '', __( 'Settings updated.', 'taskbot' ), 'updated' );
 			settings_errors( $this->key . '-notices' );
 		}
 
 		/**
 		 * Replaces get_option with get_site_option
 		 *
-		 * @since  1.0.0
+		 * @since  0.1.0
 		 */
 		public function get_override( $test, $default = false ) {
 			return get_site_option( $this->key, $default );
@@ -245,48 +215,69 @@ if ( ! class_exists( 'TaskBot_Settings' ) ) :
 		/**
 		 * Replaces update_option with update_site_option
 		 *
-		 * @since  1.0.0
+		 * @since  0.1.0
 		 */
 		public function update_override( $test, $option_value ) {
 			return update_site_option( $this->key, $option_value );
 		}
+
 		/**
 		 * Public getter method for retrieving protected/private variables
 		 *
-		 * @since  1.0.0
+		 * @since  0.1.0
 		 * @param  string $field Field to retrieve
-		 * @return mixed          Field value or exception is thrown
+		 * @return mixed  Field value or exception is thrown
 		 */
 		public function __get( $field ) {
 			// Allowed fields to retrieve
 			if ( in_array( $field, array( 'key', 'metabox_id', 'title', 'options_page' ), true ) ) {
 				return $this->{$field};
 			}
+
 			throw new Exception( 'Invalid property: ' . $field );
 		}
+
 	}
 
-	/**
-	 * Wrapper function around cmb2_get_option
-	 *
-	 * @since  1.0.0
-	 * @param  string $key Options array key.
-	 * @return mixed        Option value
-	 */
-	function taskbot_get_network_option( $key = '', $default = null ) {
-		$opt_key = taskbot()->admin->key;
-		if ( function_exists( 'cmb2_get_option' ) ) {
-			// Use cmb2_get_option as it passes through some key filters.
-			return cmb2_get_option( $opt_key, $key, $default );
-		}
-		// Fallback to get_option if CMB2 is not loaded yet.
-		$opts = get_option( $opt_key, $key, $default );
-		$val = $default;
-		if ( 'all' === $key ) {
-			$val = $opts;
-		} elseif ( array_key_exists( $key, $opts ) && false !== $opts[ $key ] ) {
-			$val = $opts[ $key ];
-		}
-		return $val;
+endif;
+
+/**
+ * Helper function to get/return the TaskBot_Settings object
+ *
+ * @since  0.1.0
+ * @return TaskBot_Settings object
+ */
+function taskbot_network_admin() {
+	return TaskBot_Settings::get_instance();
+}
+taskbot_network_admin();
+
+/**
+ * Wrapper function around cmb2_get_option
+ *
+ * @since  0.1.0
+ * @param  string $key     Options array key
+ * @param  mixed  $default Optional default value
+ * @return mixed           Option value
+ */
+function taskbot_get_option( $key = '', $default = false ) {
+	$opt_key = taskbot_network_admin()->key;
+
+	if ( function_exists( 'cmb2_get_option' ) ) {
+		// Use cmb2_get_option as it passes through some key filters.
+		return cmb2_get_option( $opt_key, $key, $default );
 	}
-endif; // End class_exists check.
+
+	// Fallback to get_option if CMB2 is not loaded yet.
+	$opts = get_option( $opt_key, $default );
+
+	$val = $default;
+
+	if ( 'all' == $key ) {
+		$val = $opts;
+	} elseif ( is_array( $opts ) && array_key_exists( $key, $opts ) && false !== $opts[ $key ] ) {
+		$val = $opts[ $key ];
+	}
+
+	return $val;
+}

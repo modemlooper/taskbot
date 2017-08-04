@@ -1,0 +1,17 @@
+{
+  "generator-plugin-wp": {
+    "name": "SchoolPress Docs",
+    "homepage": "http://schoolpresser.com",
+    "description": "docs plugin for BuddyPress",
+    "version": "1.0.0",
+    "author": "SchoolPresser",
+    "authoremail": "bmessenlehner@gmail.com",
+    "authorurl": "http://schoolpresser.com",
+    "license": "GPLv2",
+    "slug": "schoolpresser-docs",
+    "classname": "SchoolPresser_Docs",
+    "classprefix": "SPD_",
+    "prefix": "schoolpresser_docs",
+    "year": 2017
+  }
+}

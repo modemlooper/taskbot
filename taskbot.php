@@ -125,6 +125,15 @@ final class TaskBot_Loader {
 	 */
 	protected $cpt = '';
 
+
+	/**
+	 * CMB2
+	 *
+	 * @var TaskBot_Metaboxes
+	 * @since  1.0.0
+	 */
+	protected $metaboxes = '';
+
 	/**
 	 * Batch object to process.
 	 *
@@ -132,6 +141,8 @@ final class TaskBot_Loader {
 	 * @since 1.0.0
 	 */
 	public $batch = '';
+
+	public $tasks = array();
 
 	/**
 	 * Creates or returns an instance of this class.
@@ -157,12 +168,9 @@ final class TaskBot_Loader {
 		$this->url      = plugin_dir_url( __FILE__ );
 		$this->path     = plugin_dir_path( __FILE__ );
 
-		$this->includes();
+
 		$this->load_libs();
 		$this->plugin_classes();
-		$this->scripts();
-
-		do_action( 'taskbot_init' );
 
 
 	}
@@ -174,12 +182,12 @@ final class TaskBot_Loader {
 	 * @return void
 	 */
 	public function plugin_classes() {
-		$this->settings = new TaskBot_Settings( $this );
+
+		$this->settings = new TaskBot_Settings();
 		$this->cpt = new TaskBot_CPT( $this );
 		$this->batch = new TaskBot_Batch();
 
 		new TaskBot_Task_Process();
-
 
 	}
 
@@ -191,7 +199,6 @@ final class TaskBot_Loader {
 	 */
 	public function hooks() {
 		add_action( 'init', array( $this, 'init' ) );
-		add_action( 'admin_print_scripts', array( $this, 'scripts' ) );
 	}
 
 	/**
@@ -224,6 +231,21 @@ final class TaskBot_Loader {
 		if ( $this->check_requirements() ) {
 			load_plugin_textdomain( 'taskbot', false, dirname( $this->basename ) . '/languages/' );
 		}
+
+		$this->loaded();
+
+	}
+
+	public function loaded() {
+		$this->includes();
+
+		do_action( 'taskbot_init' );
+		$this->tasks = TaskBot_Base::get_all();
+		add_action( 'admin_print_scripts', array( $this, 'scripts' ) );
+
+		require_once  __DIR__ . '/inc/helper-functions.php';
+		$this->metaboxes = new TaskBot_Metaboxes( $this );
+
 	}
 
 	/**
@@ -234,7 +256,7 @@ final class TaskBot_Loader {
 	 */
 	private function includes() {
 
-		require_once  __DIR__ . '/inc/helper-functions.php';
+		require_once  __DIR__ . '/inc/tb-functions.php';
 
 		do_action( 'taskbot_include' );
 
@@ -294,7 +316,7 @@ final class TaskBot_Loader {
 			// Register out javascript file.
 			wp_register_script( 'taskbot', taskbot()->url() . 'assets/js/taskbot.js' );
 
-			wp_localize_script( 'taskbot', 'taskbot', taskbot()->cpt->tasks );
+			wp_localize_script( 'taskbot', 'taskbot', taskbot()->tasks );
 
 			// Enqueued script with localized data.
 			wp_enqueue_script( 'taskbot' );
