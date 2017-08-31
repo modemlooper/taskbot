@@ -260,6 +260,8 @@ final class TaskBot_Loader {
 
 		do_action( 'taskbot_include' );
 
+		require_once  __DIR__ . '/sample-tasks/site-stats.php';
+
 	}
 
 	/**
